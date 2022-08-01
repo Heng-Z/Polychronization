@@ -7,7 +7,7 @@ tau0 = 1*ms
 taus = 10*ms
 taupre = 20*ms
 taupost = taupre
-defaultclock.dt = 1*ms
+defaultclock.dt = 0.5*ms
 F = 1*Hz
 # a = 0.02/ms
 b = 0.2
@@ -39,24 +39,24 @@ Pe = PoissonGroup(Ne, F)
 Pi = PoissonGroup(Ni, F)
 # Define Synaptice connection: EE, EI, IE, II, PE,PI
 # Firstly, Define STDP eqns
-# stdp_eq = '''w : 1
-#                 dApre/dt = -Apre / taupre : 1 (event-driven)
-#                 dApost/dt = -Apost / taupost : 1 (event-driven)'''
-# pre_eq = '''v += w
-#                     Apre = clip(Apre+ dApre,0,2*dApre)
-#                     w = clip(w + Apost, 0, wmax)'''
-# post_eq = '''Apost = clip(Apost+ dApost,0,2*dApost)
-#                      w = clip(w + Apre, 0, wmax)'''
-
-stdp_eq = '''   dw/dt = s/tau0 + 100*clip(wmax-w,-10,0)/tau0 : 1 (clock-driven)
-                ds/dt = -s / taus : 1 (clock-driven)
+stdp_eq = '''w : 1
                 dApre/dt = -Apre / taupre : 1 (event-driven)
                 dApost/dt = -Apost / taupost : 1 (event-driven)'''
 pre_eq = '''v += w
-                    Apre+=dApre
-                    s = clip(Apost,0,2*dApost)'''
-post_eq = '''Apost += dApost
-                     s = clip(Apre,0,2*dApre)'''
+                    Apre = clip(Apre+ dApre,0,2*dApre)
+                    w = clip(w + Apost, 0, wmax)'''
+post_eq = '''Apost = clip(Apost+ dApost,2*dApost,0)
+                     w = clip(w + Apre, 0, wmax)'''
+
+# stdp_eq = '''   dw/dt = s/tau0 + 2*clip(wmax-w,-10,0)/tau0 + 2*clip(-w,0,10)/tau0 : 1 (clock-driven)
+#                 ds/dt = -s / taus : 1 (clock-driven)
+#                 dApre/dt = -Apre / taupre : 1 (event-driven)
+#                 dApost/dt = -Apost / taupost : 1 (event-driven)'''
+# pre_eq = '''v += w
+#                     Apre+=dApre
+#                     s = clip(Apost,2*dApost,0)'''
+# post_eq = '''Apost += dApost
+#                      s = clip(Apre,0,2*dApre)'''
 # Define Synapses and set parameters
 S_EE = Synapses(Ge,Ge,stdp_eq,on_pre=pre_eq,on_post=post_eq)
 S_EE.connect(p=0.1)
@@ -84,6 +84,7 @@ S_PI.w = 20
 # Define Monitors
 w_E_mon = StateMonitor(S_EE, 'w', record=np.arange(10))
 w_I_mon = StateMonitor(S_IE, 'w', record=np.arange(10))
+# s_E_mon = StateMonitor(S_EE, 's', record=np.arange(10))
 Apre_mon = StateMonitor(S_EE, 'Apre', record=np.arange(10))
 Ge_spike = SpikeMonitor(Ge)
 Gi_spike = SpikeMonitor(Gi)
@@ -91,11 +92,21 @@ Pe_spike = SpikeMonitor(Pe)
 Pi_spike = SpikeMonitor(Pi)
 #%%
 # Run the simulation
-run(1*second, report='text')
+run(10*second, report='text')
+# # %%
+# plot((Gi_spike.t/ms)[-4000:], Gi_spike.i[-4000:], '.y')
+# #%%
+# plot((Gi_spike.t/ms), Gi_spike.i, '.y')
+# # %%
+# plot(w_E_mon.w[5,100:300])
+# # %%
+# plot(Apre_mon.Apre[5,100:300])
 # %%
-plot((Gi_spike.t/ms), Gi_spike.i, '.y')
-# %%
-plot(w_E_mon.w.T)
-# %%
-plot(Apre_mon.Apre[5,100:200])
+Ge_spike_time = Ge_spike.t/ms
+Ge_spike_id = Ge_spike.i
+Gi_spike_time = Gi_spike.t/ms
+Gi_spike_id = Gi_spike.i
+# save spike time and id as npz file
+np.savez('spike_time_id.npz',Ge_spike_time=Ge_spike_time,Ge_spike_id=Ge_spike_id,Gi_spike_time=Gi_spike_time,Gi_spike_id=Gi_spike_id)
+
 # %%

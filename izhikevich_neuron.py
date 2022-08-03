@@ -20,10 +20,10 @@ class IzhiNeuron:
             self.u = self.u + self.d
 #%%
 neuron = IzhiNeuron() 
-neuron.a = 0.1 # for inhibitory
-neuron.d = 2
+# neuron.a = 0.1 # for inhibitory
+# neuron.d = 2
 dt = neuron.dt
-t = np.arange(0,300,dt)
+t = np.arange(0,400,dt)
 ut = np.zeros(t.shape)
 vt = np.zeros(t.shape)
 # Get and ramp up and ramp down shape signal in numpy
@@ -32,8 +32,10 @@ ramp_sig[0:int(len(t)/2)] = t[0:int(len(t)/2)]/500*20
 ramp_sig[int(len(t)/2):] = 40-t[int(len(t)/2):]/500*20
 # Spike train
 spike_train = np.zeros_like(t)
-spike_train[250] = 10
-spike_train[251] = 10 
+spike_train[200] = 20
+dt = 10
+spike_train[200+dt] = 20
+spike_train[201+dt] = 20
 #
 input_sig = spike_train # ramp_sig or spike_train
 for ti in range(len(t)):

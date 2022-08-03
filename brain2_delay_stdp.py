@@ -49,6 +49,7 @@ p1_mon = SpikeMonitor(P1)
 s1_mon = SpikeMonitor(G1)
 s2_mon = SpikeMonitor(G2)
 defaultclock.dt = 1*ms
+#%%
 run(1*second, report='text')
 # %%
 

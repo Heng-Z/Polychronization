@@ -3,6 +3,7 @@ from brian2 import *
 set_device('cpp_standalone', directory='STDP_standalone')
 Ne = 800
 Ni = 200
+M = 100
 tau0 = 1*ms
 taus = 10*ms
 taupre = 20*ms
@@ -15,11 +16,14 @@ c=-65
 # d = 8
 Iin = 10
 wmax = 10
+wtotmax = M*6
 dApre = 0.2
 dApost = -dApre * taupre / taupost * 1.2
 # Difine Neuron Groups
 izhi_model = '''dv/dt = (0.04*v**2+5*v+140-u)/tau0 : 1
                     du/dt = a*(b*v-u) : 1
+                    wetot : 1
+                    witot : 1
                     a : 1/second
                     d : 1'''
 threshold = 'v>30'
@@ -42,31 +46,41 @@ Pe = PoissonGroup(Ne, F)
 Pi = PoissonGroup(Ni, F)
 # Define Synaptice connection: EE, EI, IE, II, PE,PI
 # Firstly, Define STDP eqns
-# stdp_eq = '''w : 1
+# stdp_eq_e = '''w : 1
 #                 dApre/dt = -Apre / taupre : 1 (event-driven)
 #                 dApost/dt = -Apost / taupost : 1 (event-driven)
-#                 wtot_pre = w : 1 (summed)'''
+#                 wetot_pre = w : 1 (summed)'''
+# stdp_eq_i = '''w : 1
+#                 dApre/dt = -Apre / taupre : 1 (event-driven)
+#                 dApost/dt = -Apost / taupost : 1 (event-driven)
+#                 witot_pre = w : 1 (summed)'''
 # pre_eq = '''v += w
 #                     Apre = clip(Apre+ dApre,0,2*dApre)
-#                     w = clip(w + Apost, 0, wmax)'''
+#                     w = clip(w + Apost - clip(wetot+witot-wtotmax,0,inf)/M, 0, wmax)'''
 # post_eq = '''Apost = clip(Apost+ dApost,2*dApost,0)
-#                      w = clip(w + Apre, 0, wmax)'''
+#                      w = clip(w + Apre - clip(wetot+witot-wtotmax,0,inf)/M, 0, wmax)'''
 
-stdp_eq = '''   dw/dt = s/tau0 + 2*clip(wmax-w,-10,0)/tau0 + 2*clip(-w,0,10)/tau0 : 1 (clock-driven)
+stdp_eq_e = '''   dw/dt = s/tau0 + 2*clip(wmax-w,-10,0)/tau0 + 2*clip(-w,0,10)/tau0 - clip(wetot+witot-wtotmax,0,inf)/M/tau0 : 1 (clock-driven)
                 ds/dt = -s / taus : 1 (clock-driven)
                 dApre/dt = -Apre / taupre : 1 (event-driven)
-                dApost/dt = -Apost / taupost : 1 (event-driven)'''
+                dApost/dt = -Apost / taupost : 1 (event-driven)
+                wetot_pre = w: 1 (summed)'''
+stdp_eq_i = '''   dw/dt = s/tau0 + 2*clip(wmax-w,-10,0)/tau0 + 2*clip(-w,0,10)/tau0 - clip(wetot+witot-wtotmax,0,inf)/M/tau0 : 1 (clock-driven)
+                ds/dt = -s / taus : 1 (clock-driven)
+                dApre/dt = -Apre / taupre : 1 (event-driven)
+                dApost/dt = -Apost / taupost : 1 (event-driven)
+                witot_pre = w: 1 (summed)'''
 pre_eq = '''v += w
                     Apre+=dApre
                     s = clip(Apost,2*dApost,0)'''
 post_eq = '''Apost += dApost
                      s = clip(Apre,0,2*dApre)'''
 # Define Synapses and set parameters
-S_EE = Synapses(Ge,Ge,stdp_eq,on_pre=pre_eq,on_post=post_eq)
+S_EE = Synapses(Ge,Ge,stdp_eq_e,on_pre=pre_eq,on_post=post_eq)
 S_EE.connect(p=0.1)
 S_EE.w = 6
 S_EE.delay = 'ceil(rand()*20)*ms'
-S_EI = Synapses(Ge,Gi,stdp_eq,on_pre=pre_eq,on_post=post_eq)
+S_EI = Synapses(Ge,Gi,stdp_eq_i,on_pre=pre_eq,on_post=post_eq)
 S_EI.connect(p=0.1)
 S_EI.w = 6
 S_EI.delay = 'ceil(rand()*20)*ms'

@@ -61,19 +61,19 @@ post_eq = '''Apost = clip(Apost+ dApost,2*dApost,0)
 S_EE = Synapses(Ge,Ge,stdp_eq,on_pre=pre_eq,on_post=post_eq)
 S_EE.connect(p=0.1)
 S_EE.w = 6
-S_EE.delay = np.random.randint(1,20, size=S_EE.delay.shape)*ms
+S_EE.delay = 'ceil(rand()*20)*ms'
 S_EI = Synapses(Ge,Gi,stdp_eq,on_pre=pre_eq,on_post=post_eq)
 S_EI.connect(p=0.1)
 S_EI.w = 6
-S_EI.delay = np.random.randint(1,20, size=S_EI.delay.shape)*ms
+S_EI.delay = 'ceil(rand()*20)*ms'
 S_IE = Synapses(Gi,Ge,'w:1',on_pre='v-=w')
 S_IE.connect(p=0.1)
 S_IE.w = 10
-S_IE.delay = np.random.randint(1,20, size=S_IE.delay.shape)*ms
+S_IE.delay = 'ceil(rand()*20)*ms'
 S_II = Synapses(Gi,Gi,'w:1',on_pre='v-=w')
 S_II.connect(p=0.1)
 S_II.w = 10
-S_II.delay = np.random.randint(1,20, size=S_II.delay.shape)*ms
+S_II.delay = 'ceil(rand()*20)*ms'
 S_PE = Synapses(Pe,Ge,'w:1',on_pre='v+=w')
 S_PE.connect(i='j')
 S_PE.w = 20

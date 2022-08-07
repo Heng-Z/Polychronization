@@ -1,6 +1,6 @@
 #%%
 from brian2 import *
-set_device('cpp_standalone', directory='STDP_standalone')
+# set_device('cpp_standalone', directory='STDP_standalone')
 Ne = 800
 Ni = 200
 tau0 = 1*ms
@@ -63,19 +63,19 @@ post_eq = '''Apost += dApost
                      s = clip(Apre,0,2*dApre)'''
 # Define Synapses and set parameters
 S_EE = Synapses(Ge,Ge,stdp_eq,on_pre=pre_eq,on_post=post_eq)
-S_EE.connect(p=0.1)
+S_EE.connect(condition='i!=j', p=0.1)
 S_EE.w = 6
 S_EE.delay = 'ceil(rand()*20)*ms'
 S_EI = Synapses(Ge,Gi,stdp_eq,on_pre=pre_eq,on_post=post_eq)
-S_EI.connect(p=0.1)
+S_EI.connect(condition='i!=j', p=0.1)
 S_EI.w = 6
 S_EI.delay = 'ceil(rand()*20)*ms'
 S_IE = Synapses(Gi,Ge,'w:1',on_pre='v-=w')
-S_IE.connect(p=0.1)
+S_IE.connect(condition='i!=j', p=0.1)
 S_IE.w = 5
 S_IE.delay = 'ceil(rand()*20)*ms'
 S_II = Synapses(Gi,Gi,'w:1',on_pre='v-=w')
-S_II.connect(p=0.1)
+S_II.connect(condition='i!=j', p=0.1)
 S_II.w = 5
 S_II.delay = 'ceil(rand()*20)*ms'
 S_PE = Synapses(Pe,Ge,'w:1',on_pre='v+=w')
@@ -99,13 +99,16 @@ Pi_spike = SpikeMonitor(Pi)
 #%%
 # Run the simulation
 run_per_iter = 500*ms
-run_iter = 1000
+run_iter = 80
 n_indices_all = [*n_indices]*run_iter
 s_times_all = [t + i*run_per_iter for i in range(run_iter) for t in s_times]
 Inp_G.set_spikes(n_indices_all, s_times_all)
 run(run_per_iter*run_iter, report='text')
 # %%
-# plot(Ge_spike.t/ms, Ge_spike.i, '.')
+t_indices = np.where((Ge_spike.t/ms <16000) & (Ge_spike.t/ms > 14700))[0]
+plot((Ge_spike.t/ms)[t_indices], Ge_spike.i[t_indices], '.')
+#%%
+plot(w_E_mon.w.T[31300:31500])
 # %%
 Ge_spike_time = Ge_spike.t/ms
 Ge_spike_id = Ge_spike.i
@@ -113,3 +116,5 @@ Gi_spike_time = Gi_spike.t/ms
 Gi_spike_id = Gi_spike.i
 # save spike time and id as npz file
 np.savez('spike_induce.npz',Ge_spike_time=Ge_spike_time,Ge_spike_id=Ge_spike_id,Gi_spike_time=Gi_spike_time,Gi_spike_id=Gi_spike_id)
+
+# %%
